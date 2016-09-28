@@ -5,17 +5,26 @@ from twisted.internet.cfreactor import install
 install()
 
 from twisted.internet import reactor, task
+from twisted.python.filepath import FilePath
+
 import attr
+import cattr
 import datetime
+import appdirs
+import json
+
+from attr.validators import instance_of
 from math import floor
+from typing import List
 
 
 @attr.s
 class Task(object):
-    id = attr.ib()
-    name = attr.ib()
-    budget = attr.ib()
-    cutoff = attr.ib()
+    id = attr.ib(validator=instance_of(int))
+    name = attr.ib(validator=instance_of(str))
+    budget_seconds = attr.ib(validator=instance_of(int))
+    budget_per = attr.ib(validator=instance_of(str))
+    cutoff = attr.ib(validator=instance_of(str))
 
 @attr.s
 class TimeSpent(object):
@@ -24,7 +33,7 @@ class TimeSpent(object):
 
 
 WINDOW_WIDTH = 640
-PADDING_WIDTH = 10
+PADDING_WIDTH = 15
 
 task_windows = {}
 
@@ -34,12 +43,27 @@ time_spent = {
 }
 
 
+def load_tasks():
 
-tasks = [
+    dest = FilePath(appdirs.user_data_dir("myriagon", "hawkowl"))
+    task_file = dest.child("tasks.json")
 
-    Task(id=1, name="Thing", budget=(60, "day"), cutoff="week"),
+    if not task_file.exists():
+        dest.makedirs(True)
+        task_file.setContent(b"[]")
 
-]
+    return cattr.loads(
+        json.loads(task_file.getContent().decode('utf8')),
+        List[Task])
+
+
+def save_tasks(tasks):
+
+    dest = FilePath(appdirs.user_data_dir("myriagon", "hawkowl"))
+    dest.makedirs(True)
+
+    task_file = dest.child("tasks.json")
+    task_file.setContent(json.dumps(cattr.dumps(tasks)).encode('utf8'))
 
 
 def get_time_for_session(task):
@@ -52,7 +76,6 @@ def get_time_for_session(task):
 
     cutoff_time = cutoff_time - cutoff_delta
 
-
     time_spent_this_per = sum(map(
         lambda s: (s.finished - s.started).total_seconds(),
         filter(lambda t: t.started > cutoff_time,
@@ -64,14 +87,10 @@ def get_time_for_session(task):
 
 def get_time_needed_for_session(task):
 
-    seconds, per = task.budget
 
     if task.cutoff == "week":
-        if per == "day":
-            return seconds * 7
-
-
-
+        if task.budget_per == "day":
+            return task.budget_seconds * 7
 
 
 def make_task_window(app, myr_task):
@@ -81,7 +100,7 @@ def make_task_window(app, myr_task):
         return
 
     box = toga.Box()
-    box.style.padding = 10
+    box.style.padding = PADDING_WIDTH
 
     timer_box = toga.Box()
     timer_box.style.flex_direction = "row"
@@ -156,10 +175,21 @@ def make_task_window(app, myr_task):
     task_windows[myr_task.id] = window
 
 
+def make_add_task_window(app):
+    pass
+
+
 def build(app):
 
+    tasks = [
+        Task(id=1, name="Thing", budget_seconds=60, budget_per="day", cutoff="week"),
+    ]
+    save_tasks(tasks)
+
+    tasks = load_tasks()
+
     box = toga.Box()
-    box.style.padding = 10
+    box.style.padding = PADDING_WIDTH
 
     fullbox = toga.Box()
     fullbox.style.width = WINDOW_WIDTH - PADDING_WIDTH * 2
@@ -169,17 +199,20 @@ def build(app):
     itemlist.style.width = WINDOW_WIDTH - PADDING_WIDTH * 2
     box.add(itemlist)
 
+    item_label_font = toga.Font("Helvetica", 18)
+
     for task in tasks:
         itembox = toga.Box()
         itembox.style.flex_direction = "row"
 
         lbl = toga.Label(task.name)
         lbl.style.width = (WINDOW_WIDTH - PADDING_WIDTH * 2) / 4 * 3
-
+        lbl.set_font(item_label_font)
 
         btn = toga.Button("Open")
         btn.style.width = (WINDOW_WIDTH - PADDING_WIDTH * 2) / 4
 
+        lbl.style.height = btn.style.height
 
         itembox.add(lbl)
         itembox.add(btn)
@@ -187,11 +220,10 @@ def build(app):
         fullbox.add(itembox)
 
     button_box = toga.Box()
-    button = toga.Button('Go go go')
+    button = toga.Button('Add New Task')
 
     def open_new(t):
-        window = make_task_window()
-        window.show()
+        window = make_add_task_window(app)
 
     button.on_press = open_new
     button_box.add(button)
