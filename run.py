@@ -4,7 +4,8 @@ import toga.constants
 from twisted.internet.cfreactor import install
 install()
 
-from twisted.internet import reactor, task
+from twisted.internet import reactor
+from twisted.internet.task import LoopingCall
 from twisted.python.filepath import FilePath
 
 import attr
@@ -49,10 +50,16 @@ def load_tasks():
         dest.makedirs(True)
         task_file.setContent(b"[]")
 
-    return cattr.loads(
+    loaded = cattr.loads(
         json.loads(task_file.getContent().decode('utf8')),
         List[Task])
 
+    def sort(x):
+        time = load_time_spent(x)
+        return get_time_needed_for_session(x) - get_time_for_session(x, time)
+
+    loaded.sort(key=sort, reverse=True)
+    return loaded
 
 def save_tasks(tasks):
 
@@ -111,9 +118,11 @@ def get_time_needed_for_session(task):
     if task.cutoff == "week":
         if task.budget_per == "day":
             return task.budget_seconds * 7
+        elif task.budget_per == "week":
+            return task.budget_seconds
 
 
-def make_task_window(app, myr_task):
+def make_task_window(app, myr_task, update_ui):
 
     time = load_time_spent(myr_task)
 
@@ -180,13 +189,14 @@ def make_task_window(app, myr_task):
             loops.pop().stop()
 
         save_time_spent(myr_task, time)
+        update_ui()
 
     def dt(btn):
         started[0] = floor(reactor.seconds())
         button.label = "Stop"
         button.on_press = stop_things
 
-        lp = task.LoopingCall(update_label)
+        lp = LoopingCall(update_label)
         lp.start(0.1)
         loops.append(lp)
     do_things = dt
@@ -203,7 +213,7 @@ def make_task_window(app, myr_task):
     task_windows[myr_task.id] = window
 
 
-def make_add_task_window(app, update):
+def make_add_task_window(app, update_ui, update=False):
     """
     Adding tasks...
     """
@@ -276,10 +286,8 @@ def make_add_task_window(app, update):
 
     organised_entry = toga.TextInput(placeholder="week")
 
-
     organised_box.add(organised_label)
     organised_box.add(organised_entry)
-
 
     controls_box.add(name_box)
     controls_box.add(per_box)
@@ -291,35 +299,67 @@ def make_add_task_window(app, update):
 
     button = toga.Button("Save")
 
+    def get_seconds_per():
+
+        if per_amount_entry_type.value == "seconds":
+            seconds_per = float(per_amount_entry.value)
+        elif per_amount_entry_type.value == "minutes":
+            seconds_per = float(per_amount_entry.value) * 60
+        elif per_amount_entry_type.value == "hours":
+            seconds_per = float(per_amount_entry.value) * 3600
+
+        return floor(seconds_per)
+
     def save_new_task(btn):
         tasks = load_tasks()
 
-        if per_amount_entry_type.value == "minutes":
-
-            seconds_per = float(per_amount_entry.value) * 60
-
-        elif per_amount_entry_type.value == "hours":
-            seconds_per = float(per_amount_entry.value) * 3600
 
 
         tasks.append(Task(id=randint(0, 9999999999999999),
                           name=name_entry.value,
-                          budget_seconds=floor(seconds_per),
+                          budget_seconds=get_seconds_per(),
                           budget_per=per_duration_entry.value,
                           cutoff=organised_entry.value))
 
         save_tasks(tasks)
-        update(tasks)
-        print(tasks)
+        update_ui()
         window.close()
 
-    button.on_press = save_new_task
+
+    def update_task(btn):
+
+        tasks = load_tasks()
+        tasks.remove(list(filter(lambda x: x.id == update.id, tasks))[0])
+
+        tasks.append(Task(id=update.id,
+                          name=name_entry.value,
+                          budget_seconds=get_seconds_per(),
+                          budget_per=per_duration_entry.value,
+                          cutoff=organised_entry.value))
+
+        save_tasks(tasks)
+        update_ui()
+        window.close()
+
+
+    if update is False:
+        button.on_press = save_new_task
+        window._set_title("Add New Task")
+
+    else:
+        name_entry.value = update.name
+        per_amount_entry.value = update.budget_seconds
+        per_amount_entry_type.value = "seconds"
+        per_duration_entry.value = update.budget_per
+        organised_entry.value = update.cutoff
+
+        button.on_press = update_task
+        window._set_title("Edit " + update.name)
 
     button_box.add(button)
     box.add(button_box)
 
     window.content = box
-    window._set_title("Add New Task")
     window.show()
 
     pass
@@ -330,7 +370,6 @@ def build(app):
     box = toga.Box()
     box.style.padding = PADDING_WIDTH
 
-
     itemlist = toga.ScrollContainer(horizontal=False, vertical=True)
     itemlist.style.height = 400
     itemlist.style.width = WINDOW_WIDTH - PADDING_WIDTH * 2
@@ -339,7 +378,9 @@ def build(app):
     item_label_font = toga.Font("Helvetica", 18)
 
 
-    def build_itemlist(tasks):
+    def build_itemlist():
+
+        tasks = load_tasks()
 
         fullbox = toga.Box()
         fullbox.style.width = WINDOW_WIDTH - PADDING_WIDTH * 2
@@ -352,21 +393,30 @@ def build(app):
             lbl.style.width = (WINDOW_WIDTH - PADDING_WIDTH * 2) / 4 * 3
             lbl.set_font(item_label_font)
 
+            edit_btn = toga.Button("Edit")
+            edit_btn.style.width = (WINDOW_WIDTH - PADDING_WIDTH * 2) / 4 / 2
+
             btn = toga.Button("Open")
-            btn.style.width = (WINDOW_WIDTH - PADDING_WIDTH * 2) / 4
+            btn.style.width = (WINDOW_WIDTH - PADDING_WIDTH * 2) / 4 / 2
 
             lbl.style.height = btn.style.height
 
             itembox.add(lbl)
+            itembox.add(edit_btn)
             itembox.add(btn)
-            btn.on_press = lambda _: make_task_window(app, task)
+            a = task.id
+
+            def add_buttons(task):
+                edit_btn.on_press = lambda _: make_add_task_window(app, build_itemlist, update=task)
+                btn.on_press = lambda _: make_task_window(app, task, build_itemlist)
+
+            add_buttons(task)
             fullbox.add(itembox)
 
         itemlist.content = fullbox
         itemlist._update_layout()
 
-    tasks = load_tasks()
-    build_itemlist(tasks)
+    build_itemlist()
 
     button_box = toga.Box()
     button = toga.Button('Add New Task')
@@ -379,10 +429,6 @@ def build(app):
     box.add(button_box)
 
     app.main_window._set_title("Myriagon")
-
-
-    build_itemlist(tasks)
-
 
     return box
 
