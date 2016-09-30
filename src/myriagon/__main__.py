@@ -10,7 +10,7 @@ if platform.isMacOSX():
     install()
 elif platform.isLinux():
     DISPLAY_FONT = "Ubuntu Light"
-    FONT_RATIO = 0.8
+    FONT_RATIO = 0.9
     from twisted.internet.gireactor import install
     install(True)
 
