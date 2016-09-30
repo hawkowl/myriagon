@@ -23,6 +23,7 @@ import cattr
 import datetime
 import appdirs
 import json
+import time
 
 from attr.validators import instance_of
 from math import floor
@@ -204,7 +205,7 @@ def make_task_window(app, myr_task, update_ui):
         if needed - spent[0] > 0:
 
             if started[0]:
-                total = needed - spent[0] + (started[0] - floor(datetime.datetime.now().timestamp()))
+                total = needed - spent[0] + (started[0] - floor(time.time()))
             else:
                 total = needed - spent[0]
 
@@ -215,8 +216,8 @@ def make_task_window(app, myr_task, update_ui):
 
     def update_label():
         if started[0]:
-            total = needed - spent[0] + (started[0] - floor(datetime.datetime.now().timestamp()))
-            this_session = floor(datetime.datetime.now().timestamp()) - started[0]
+            total = needed - spent[0] + (started[0] - floor(time.time()))
+            this_session = floor(time.time()) - started[0]
         else:
             total = needed - spent[0]
             this_session = 0
@@ -245,7 +246,7 @@ def make_task_window(app, myr_task, update_ui):
 
         time.append(TimeSpent(
             started=started[0],
-            finished=floor(datetime.datetime.now().timestamp())))
+            finished=floor(time.time())))
 
         started[0] = 0
         spent[0] = get_time_for_session(myr_task, time)
@@ -260,7 +261,7 @@ def make_task_window(app, myr_task, update_ui):
         update_ui()
 
     def dt(btn):
-        started[0] = floor(datetime.datetime.now().timestamp())
+        started[0] = floor(time.time())
         button.label = "Stop"
         button.on_press = stop_things
 
