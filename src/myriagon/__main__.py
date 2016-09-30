@@ -128,9 +128,6 @@ def get_time_for_session(task, time):
     cutoff_time = (cutoff_time - cutoff_delta).timestamp()
 
     qualifiers = filter(lambda t: t.started > cutoff_time, time)
-
-    print(qualifiers, time)
-
     time_spent_this_per = sum(map(
         lambda s: s.finished - s.started, qualifiers ))
 
