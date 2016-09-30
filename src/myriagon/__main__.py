@@ -38,6 +38,7 @@ class Task(object):
     budget_seconds = attr.ib(validator=instance_of(int))
     budget_per = attr.ib(validator=instance_of(str))
     cutoff = attr.ib(validator=instance_of(str))
+    since = attr.ib(validator=instance_of(int))
 
 
 @attr.s
@@ -51,8 +52,8 @@ PADDING_WIDTH = 15
 
 task_windows = {}
 
-def seconds_into_clock(total):
 
+def seconds_into_clock(total):
 
     if total < 0:
         prefix = "-"
@@ -136,9 +137,20 @@ def get_time_for_session(task, time):
 
 def get_time_needed_for_session(task):
 
+    cd = datetime.date.today()
+    cutoff_time = datetime.datetime(cd.year, cd.month, cd.day)
+
     if task.cutoff == "week":
+        cutoff_delta = cutoff_time - datetime.timedelta(
+            days=datetime.datetime.isoweekday(cutoff_time))
+
+        if task.since > cutoff_delta.timestamp():
+            days = 7 - datetime.datetime.isoweekday(cutoff_time)
+        else:
+            days = 7
+
         if task.budget_per == "day":
-            return task.budget_seconds * 7
+            return task.budget_seconds * days
         elif task.budget_per == "week":
             return task.budget_seconds
 
@@ -398,7 +410,8 @@ def make_add_task_window(app, update_ui, update=False):
                           name=name_entry.value,
                           budget_seconds=get_seconds_per(),
                           budget_per=per_duration_entry.value,
-                          cutoff=organised_entry.value))
+                          cutoff=organised_entry.value,
+                          since=floor(time.time())))
 
         save_tasks(tasks)
         update_ui()
