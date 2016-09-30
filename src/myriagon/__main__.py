@@ -126,10 +126,12 @@ def get_time_for_session(task, time):
 
     cutoff_time = (cutoff_time - cutoff_delta).timestamp()
 
+    qualifiers = filter(lambda t: t.started > cutoff_time, time)
+
+    print(qualifiers, time)
+
     time_spent_this_per = sum(map(
-        lambda s: s.finished - s.started,
-        filter(lambda t: t.started > cutoff_time,
-               time)))
+        lambda s: s.finished - s.started, qualifiers ))
 
     return time_spent_this_per
 
@@ -253,12 +255,9 @@ def make_task_window(app, myr_task, update_ui):
 
         save_time_spent(myr_task, time)
 
-        try:
-            update_label()
-            update_per_label()
-            update_ui()
-        except Exception as e:
-            print(e)
+        update_label()
+        update_per_label()
+        update_ui()
 
     def dt(btn):
         started[0] = floor(datetime.datetime.now().timestamp())
@@ -452,7 +451,6 @@ def build(app):
     box.add(itemlist)
 
     item_label_font = toga.Font("Helvetica", 18 * FONT_RATIO)
-
 
     def build_itemlist():
 
