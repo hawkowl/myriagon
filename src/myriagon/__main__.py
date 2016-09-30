@@ -148,7 +148,7 @@ def get_time_needed_for_session(task):
 
 def make_task_window(app, myr_task, update_ui):
 
-    time = load_time_spent(myr_task)
+    time_spent = load_time_spent(myr_task)
 
     WINDOW_WIDTH = 450
 
@@ -164,7 +164,7 @@ def make_task_window(app, myr_task, update_ui):
     timer_box.style.justify_content = "center"
 
     needed = get_time_needed_for_session(myr_task)
-    spent = [get_time_for_session(myr_task, time)]
+    spent = [get_time_for_session(myr_task, time_spent)]
 
     started = [0]
 
@@ -244,17 +244,17 @@ def make_task_window(app, myr_task, update_ui):
         button.label = "Start"
         button.on_press = do_things
 
-        time.append(TimeSpent(
+        time_spent.append(TimeSpent(
             started=started[0],
             finished=floor(time.time())))
 
         started[0] = 0
-        spent[0] = get_time_for_session(myr_task, time)
+        spent[0] = get_time_for_session(myr_task, time_spent)
 
         while loops:
             loops.pop().stop()
 
-        save_time_spent(myr_task, time)
+        save_time_spent(myr_task, time_spent)
 
         update_label()
         update_per_label()
