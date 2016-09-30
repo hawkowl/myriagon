@@ -4,9 +4,11 @@ import toga.constants
 from twisted.python.runtime import platform
 
 if platform.isMacOSX():
+    DISPLAY_FONT = "Helvetica Light"
     from twisted.internet.cfreactor import install
     install()
 elif platform.isLinux():
+    DISPLAY_FONT = "Ubuntu Light"
     from twisted.internet.gireactor import install
     install(True)
 
@@ -161,14 +163,14 @@ def make_task_window(app, myr_task, update_ui):
 
     started = [0]
 
-    font = toga.Font("Helvetica Light", 90)
+    font = toga.Font(DISPLAY_FONT, 90)
 
     timer_label = toga.Label("00:00", alignment=toga.constants.CENTER_ALIGNED)
     timer_label.style.width = WINDOW_WIDTH - PADDING_WIDTH * 2
     timer_label.style.height = 110
     timer_label.set_font(font)
 
-    session_font = toga.Font("Helvetica Light", 40)
+    session_font = toga.Font(DISPLAY_FONT, 40)
 
     session_label = toga.Label("00:00:00", alignment=toga.constants.CENTER_ALIGNED)
     session_label.style.width = WINDOW_WIDTH - PADDING_WIDTH * 2
