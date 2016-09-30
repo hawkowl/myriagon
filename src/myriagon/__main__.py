@@ -5,10 +5,12 @@ from twisted.python.runtime import platform
 
 if platform.isMacOSX():
     DISPLAY_FONT = "Helvetica Light"
+    FONT_RATIO = 1
     from twisted.internet.cfreactor import install
     install()
 elif platform.isLinux():
     DISPLAY_FONT = "Ubuntu Light"
+    FONT_RATIO = 0.7
     from twisted.internet.gireactor import install
     install(True)
 
@@ -163,14 +165,14 @@ def make_task_window(app, myr_task, update_ui):
 
     started = [0]
 
-    font = toga.Font(DISPLAY_FONT, 90)
+    font = toga.Font(DISPLAY_FONT, 90 * FONT_RATIO)
 
     timer_label = toga.Label("00:00", alignment=toga.constants.CENTER_ALIGNED)
     timer_label.style.width = WINDOW_WIDTH - PADDING_WIDTH * 2
     timer_label.style.height = 110
     timer_label.set_font(font)
 
-    session_font = toga.Font(DISPLAY_FONT, 40)
+    session_font = toga.Font(DISPLAY_FONT, 40 * FONT_RATIO)
 
     session_label = toga.Label("00:00:00", alignment=toga.constants.CENTER_ALIGNED)
     session_label.style.width = WINDOW_WIDTH - PADDING_WIDTH * 2
@@ -271,7 +273,7 @@ def make_task_window(app, myr_task, update_ui):
     box.add(button_box)
 
     window = toga.Window(title=myr_task.name, position=(150,150),
-                         size=(WINDOW_WIDTH,200))
+                         size=(WINDOW_WIDTH,200), resizeable=False)
 
     def on_close():
         stop_things(None)
@@ -295,7 +297,7 @@ def make_add_task_window(app, update_ui, update=False):
     else:
         window_title = "Edit " + update.name
 
-    window = toga.Window(size=(WINDOW_WIDTH, 0))
+    window = toga.Window(size=(WINDOW_WIDTH, 0), resizeable=False)
 
     box = toga.Box()
 
@@ -448,7 +450,7 @@ def build(app):
     itemlist.style.width = WINDOW_WIDTH - PADDING_WIDTH * 2
     box.add(itemlist)
 
-    item_label_font = toga.Font("Helvetica", 18)
+    item_label_font = toga.Font("Helvetica", 18 * FONT_RATIO)
 
 
     def build_itemlist():
