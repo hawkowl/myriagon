@@ -1,8 +1,14 @@
 import toga
 import toga.constants
 
-from twisted.internet.cfreactor import install
-install()
+from twisted.python.runtime import platform
+
+if platform.isMacOSX():
+    from twisted.internet.cfreactor import install
+    install()
+elif platform.isLinux():
+    from twisted.internet.gireactor import install
+    install(True)
 
 from twisted.internet import reactor
 from twisted.internet.task import LoopingCall
