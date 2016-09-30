@@ -496,6 +496,10 @@ def build(app):
     return box
 
 
-if __name__ == '__main__':
+def main():
     app = toga.App('Myriagon', 'net.atleastfornow.myriagon', startup=build)
     app.main_loop()
+
+
+if __name__ == '__main__':
+    main()
