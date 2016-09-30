@@ -273,8 +273,9 @@ def make_task_window(app, myr_task, update_ui):
     box.add(timer_box)
     box.add(button_box)
 
-    window = toga.Window(title=myr_task.name, position=(150,150),
-                         size=(WINDOW_WIDTH,200), resizeable=False)
+    window = toga.Window(title=myr_task.name + " – Myriagon",
+                         position=(150,150), size=(WINDOW_WIDTH,200),
+                         resizeable=False)
 
     def on_close():
         if started[0]:
@@ -499,6 +500,8 @@ def build(app):
     button.on_press = open_new
     button_box.add(button)
     box.add(button_box)
+
+    app.main_window.title = "Myriagon"
 
     return box
 
