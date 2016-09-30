@@ -40,6 +40,17 @@ PADDING_WIDTH = 15
 
 task_windows = {}
 
+def seconds_into_clock(total):
+
+
+    if total < 0:
+        prefix = "-"
+        total = -total
+    else:
+        prefix = ""
+
+    return "{}{:02d}:{:02d}:{:02d}".format(prefix, floor(total / 3600), floor((total % 3600) / 60), floor(total % 60))
+
 
 def load_tasks():
 
@@ -136,7 +147,7 @@ def make_task_window(app, myr_task, update_ui):
     box.style.padding = PADDING_WIDTH
 
     timer_box = toga.Box()
-    timer_box.style.flex_direction = "row"
+    timer_box.style.flex_direction = "column"
     timer_box.style.justify_content = "center"
 
     needed = get_time_needed_for_session(myr_task)
@@ -144,30 +155,73 @@ def make_task_window(app, myr_task, update_ui):
 
     started = [0]
 
+    font = toga.Font("Helvetica Light", 90)
+
     timer_label = toga.Label("00:00", alignment=toga.constants.CENTER_ALIGNED)
+    timer_label.style.width = WINDOW_WIDTH - PADDING_WIDTH * 2
+    timer_label.style.height = 110
+    timer_label.set_font(font)
+
+    session_font = toga.Font("Helvetica Light", 40)
+
+    session_label = toga.Label("00:00:00", alignment=toga.constants.CENTER_ALIGNED)
+    session_label.style.width = WINDOW_WIDTH - PADDING_WIDTH * 2
+    session_label.style.height = 42
+    session_label.set_font(session_font)
+
+    if myr_task.cutoff == "day":
+        cutoff_text = "today"
+    elif myr_task.cutoff == "week":
+        cutoff_text = "this week"
+
+    per_label = toga.Label("remaining " + cutoff_text, alignment=toga.constants.CENTER_ALIGNED)
+    per_label.style.width = WINDOW_WIDTH - PADDING_WIDTH * 2
+
+    def update_per_label():
+        cd = datetime.date.today()
+        cutoff_time = datetime.datetime(cd.year, cd.month, cd.day)
+
+        txt = "remaining " + cutoff_text
+
+        if myr_task.cutoff == "week":
+            cutoff_delta = datetime.timedelta(days=datetime.datetime.isoweekday(cutoff_time))
+
+            cutoff_time = (cutoff_time - cutoff_delta + datetime.timedelta(days=6))
+            days_remaining = (cutoff_time - datetime.datetime(cd.year, cd.month, cd.day)).days + 1
+
+        if needed - spent[0] > 0:
+
+            if started[0]:
+                total = needed - spent[0] + (started[0] - floor(reactor.seconds()))
+            else:
+                total = needed - spent[0]
+
+            txt += " (" + seconds_into_clock(total / 2) + " per day)"
+
+        per_label.text = txt
+
 
     def update_label():
         if started[0]:
             total = needed - spent[0] + (started[0] - floor(reactor.seconds()))
+            this_session = floor(reactor.seconds()) - started[0]
         else:
             total = needed - spent[0]
-        lab = "{:02d}:{:02d}:{:02d}".format(floor(total / 3600), floor((total % 3600) / 60), floor(total % 60))
-        timer_label.text = lab
+            this_session = 0
+        timer_label.text = seconds_into_clock(total)
+        session_label.text = seconds_into_clock(this_session)
+
 
     update_label()
+    update_per_label()
+
+    timer_box.add(session_label)
+    timer_box.add(timer_label)
+    timer_box.add(per_label)
 
     button_box = toga.Box()
-    box.add(timer_box)
-    box.add(button_box)
-
-    font = toga.Font("Helvetica Light", 90)
-
-    timer_label.style.width = WINDOW_WIDTH - PADDING_WIDTH * 2
-    timer_label.style.height = 120
-    timer_label.set_font(font)
-    timer_box.add(timer_label)
-
     button = toga.Button('Start')
+    button.style.margin_top = 5
 
     # lol scopign
     do_things = None
@@ -184,6 +238,7 @@ def make_task_window(app, myr_task, update_ui):
         started[0] = 0
         spent[0] = get_time_for_session(myr_task, time)
         update_label()
+        update_per_label()
 
         while loops:
             loops.pop().stop()
@@ -204,9 +259,17 @@ def make_task_window(app, myr_task, update_ui):
     button.on_press = do_things
     button_box.add(button)
 
+    box.add(timer_box)
+    box.add(button_box)
+
     window = toga.Window(title=myr_task.name, position=(150,150), size=(WINDOW_WIDTH,200))
     window._set_title(myr_task.name)
-    window.on_close = lambda: task_windows.pop(myr_task.id)
+
+    def on_close():
+        stop_things(None)
+        task_windows.pop(myr_task.id)
+
+    window.on_close = on_close
     window.content = box
     window.show()
 
