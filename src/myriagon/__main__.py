@@ -202,7 +202,7 @@ def make_task_window(app, myr_task, update_ui):
         if needed - spent[0] > 0:
 
             if started[0]:
-                total = needed - spent[0] + (started[0] - floor(reactor.seconds()))
+                total = needed - spent[0] + (started[0] - floor(datetime.datetime.now().timestamp()))
             else:
                 total = needed - spent[0]
 
@@ -213,8 +213,8 @@ def make_task_window(app, myr_task, update_ui):
 
     def update_label():
         if started[0]:
-            total = needed - spent[0] + (started[0] - floor(reactor.seconds()))
-            this_session = floor(reactor.seconds()) - started[0]
+            total = needed - spent[0] + (started[0] - floor(datetime.datetime.now().timestamp()))
+            this_session = floor(datetime.datetime.now().timestamp()) - started[0]
         else:
             total = needed - spent[0]
             this_session = 0
@@ -243,7 +243,7 @@ def make_task_window(app, myr_task, update_ui):
 
         time.append(TimeSpent(
             started=started[0],
-            finished=floor(reactor.seconds())))
+            finished=floor(datetime.datetime.now().timestamp())))
 
         started[0] = 0
         spent[0] = get_time_for_session(myr_task, time)
@@ -261,7 +261,7 @@ def make_task_window(app, myr_task, update_ui):
             print(e)
 
     def dt(btn):
-        started[0] = floor(reactor.seconds())
+        started[0] = floor(datetime.datetime.now().timestamp())
         button.label = "Stop"
         button.on_press = stop_things
 
@@ -280,7 +280,8 @@ def make_task_window(app, myr_task, update_ui):
                          size=(WINDOW_WIDTH,200), resizeable=False)
 
     def on_close():
-        stop_things(None)
+        if started[0]:
+            stop_things(None)
         task_windows.pop(myr_task.id)
 
     window.on_close = on_close
