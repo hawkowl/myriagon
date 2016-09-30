@@ -247,14 +247,18 @@ def make_task_window(app, myr_task, update_ui):
 
         started[0] = 0
         spent[0] = get_time_for_session(myr_task, time)
-        update_label()
-        update_per_label()
 
         while loops:
             loops.pop().stop()
 
         save_time_spent(myr_task, time)
-        update_ui()
+
+        try:
+            update_label()
+            update_per_label()
+            update_ui()
+        except Exception as e:
+            print(e)
 
     def dt(btn):
         started[0] = floor(reactor.seconds())
@@ -390,8 +394,6 @@ def make_add_task_window(app, update_ui, update=False):
 
     def save_new_task(btn):
         tasks = load_tasks()
-
-
 
         tasks.append(Task(id=randint(0, 9999999999999999),
                           name=name_entry.value,
