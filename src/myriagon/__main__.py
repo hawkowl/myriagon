@@ -268,8 +268,8 @@ def make_task_window(app, myr_task, update_ui):
     box.add(timer_box)
     box.add(button_box)
 
-    window = toga.Window(title=myr_task.name, position=(150,150), size=(WINDOW_WIDTH,200))
-    window._set_title(myr_task.name)
+    window = toga.Window(title=myr_task.name, position=(150,150),
+                         size=(WINDOW_WIDTH,200))
 
     def on_close():
         stop_things(None)
@@ -287,6 +287,11 @@ def make_add_task_window(app, update_ui, update=False):
     Adding tasks...
     """
     WINDOW_WIDTH = 465
+
+    if update is False:
+        window_title = "Add New Task"
+    else:
+        window_title = "Edit " + update.name
 
     window = toga.Window(size=(WINDOW_WIDTH, 0))
 
@@ -413,8 +418,6 @@ def make_add_task_window(app, update_ui, update=False):
 
     if update is False:
         button.on_press = save_new_task
-        window._set_title("Add New Task")
-
     else:
         name_entry.value = update.name
         per_amount_entry.value = update.budget_seconds
@@ -423,7 +426,6 @@ def make_add_task_window(app, update_ui, update=False):
         organised_entry.value = update.cutoff
 
         button.on_press = update_task
-        window._set_title("Edit " + update.name)
 
     button_box.add(button)
     box.add(button_box)
@@ -496,8 +498,6 @@ def build(app):
     button.on_press = open_new
     button_box.add(button)
     box.add(button_box)
-
-    app.main_window._set_title("Myriagon")
 
     return box
 
