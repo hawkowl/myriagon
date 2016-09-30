@@ -437,8 +437,6 @@ def make_add_task_window(app, update_ui, update=False):
     window.content = box
     window.show()
 
-    pass
-
 
 def build(app):
 
@@ -446,7 +444,7 @@ def build(app):
     box.style.padding = PADDING_WIDTH
 
     itemlist = toga.ScrollContainer(horizontal=False, vertical=True)
-    itemlist.style.height = 400
+    itemlist.style.height = 450
     itemlist.style.width = WINDOW_WIDTH - PADDING_WIDTH * 2
     box.add(itemlist)
 
