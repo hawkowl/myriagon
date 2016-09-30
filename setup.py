@@ -39,18 +39,30 @@ setup(
         "Twisted",
         "appdirs",
         "attrs",
-        "toga",
         "cattrs",
     ],
     entry_points={
-          'console_scripts': [
-              'myriagon = myriagon.__main__:main'
-          ]
-      },
+        'console_scripts': [
+            'myriagon = myriagon.__main__:main'
+        ]
+    },
     setup_requires=[
         "incremental>=16.9.1"
     ],
     extras_require={
         ':sys_platform=="darwin"': ['pyobjc-framework-CFNetwork'],
     },
+
+    options={
+        'app': {
+            'formal_name': 'Myriagon',
+            'bundle': 'net.atleastfornow',
+        },
+        'macos': {
+            'app_requires': [
+                'toga-cocoa'
+            ],
+            # 'icon': 'icons/myriagon',
+        },
+    }
 )
