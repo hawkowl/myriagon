@@ -9,7 +9,7 @@ Installation
 macOS Installation
 ~~~~~~~~~~~~~~~~~~
 
-.. code-block:: sh
+.. code-block:: none
    python3 -m pip install https://github.com/Tinche/cattrs/archive/master.zip
    python3 -m pip install https://github.com/pybee/toga-core/archive/master.zip
    python3 -m pip install https://github.com/pybee/toga-cocoa/archive/master.zip
@@ -18,7 +18,7 @@ macOS Installation
 Linux Installation
 ~~~~~~~~~~~~~~~~~~
 
-.. code-block:: sh
+.. code-block:: none
    apt-get install python3-gi # Or similar for your distro
    python3 -m pip install https://github.com/Tinche/cattrs/archive/master.zip
    python3 -m pip install https://github.com/pybee/toga-core/archive/master.zip
