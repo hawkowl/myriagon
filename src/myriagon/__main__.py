@@ -124,7 +124,8 @@ def get_time_for_session(task, time):
     cutoff_time = datetime.datetime(cd.year, cd.month, cd.day)
 
     if task.cutoff == "week":
-        cutoff_delta = datetime.timedelta(days=datetime.datetime.isoweekday(cutoff_time))
+        cutoff_delta = datetime.timedelta(
+            days=datetime.datetime.isoweekday(cutoff_time))
 
     cutoff_time = (cutoff_time - cutoff_delta).timestamp()
 
@@ -208,8 +209,8 @@ def make_task_window(app, myr_task, update_ui):
         if myr_task.cutoff == "week":
             cutoff_delta = datetime.timedelta(days=datetime.datetime.isoweekday(cutoff_time))
 
-            cutoff_time = (cutoff_time - cutoff_delta + datetime.timedelta(days=6))
-            days_remaining = (cutoff_time - datetime.datetime(cd.year, cd.month, cd.day)).days + 1
+            cutoff_time = (cutoff_time - cutoff_delta + datetime.timedelta(days=7))
+            days_remaining = (cutoff_time - datetime.datetime(cd.year, cd.month, cd.day)).days
 
         if needed - spent[0] > 0:
 
@@ -218,7 +219,7 @@ def make_task_window(app, myr_task, update_ui):
             else:
                 total = needed - spent[0]
 
-            txt += " (" + seconds_into_clock(total / 2) + " per day)"
+            txt += " (" + seconds_into_clock(total / days_remaining) + " per day)"
 
         per_label.text = txt
 
@@ -312,7 +313,8 @@ def make_add_task_window(app, update_ui, update=False):
     else:
         window_title = "Edit " + update.name
 
-    window = toga.Window(size=(WINDOW_WIDTH, 0), resizeable=False)
+    window = toga.Window(size=(WINDOW_WIDTH, 0), title=window_title,
+                         resizeable=False)
 
     box = toga.Box()
 
