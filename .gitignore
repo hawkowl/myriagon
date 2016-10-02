@@ -3,6 +3,7 @@
 *.py[co]
 *.so
 *.DS_Store
+.eggs
 _trial_temp*/
 build/
 dropin.cache
@@ -15,3 +16,4 @@ htmlcov/
 *~
 *.lock
 apidocs/
+macOS/

@@ -1,8 +1,4 @@
-def main():
-    from .main import build
-    app = toga.App('Myriagon', 'net.atleastfornow.myriagon', startup=build)
-    app.main_loop()
-
+from .app import main
 
 if __name__ == '__main__':
     main()
