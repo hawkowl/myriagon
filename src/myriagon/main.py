@@ -129,7 +129,7 @@ def get_time_for_session(task, time):
 
     if task.cutoff == "week":
         cutoff_delta = datetime.timedelta(
-            days=datetime.datetime.isoweekday(cutoff_time))
+            days=datetime.datetime.weekday(cutoff_time))
 
     cutoff_time = (cutoff_time - cutoff_delta).timestamp()
 
@@ -147,10 +147,10 @@ def get_time_needed_for_session(task):
 
     if task.cutoff == "week":
         cutoff_delta = cutoff_time - datetime.timedelta(
-            days=datetime.datetime.isoweekday(cutoff_time))
+            days=datetime.datetime.weekday(cutoff_time))
 
         if task.since > cutoff_delta.timestamp():
-            days = 7 - datetime.datetime.isoweekday(cutoff_time)
+            days = 7 - datetime.datetime.weekday(cutoff_time)
         else:
             days = 7
 
@@ -211,7 +211,7 @@ def make_task_window(app, myr_task, update_ui):
         txt = "remaining " + cutoff_text
 
         if myr_task.cutoff == "week":
-            cutoff_delta = datetime.timedelta(days=datetime.datetime.isoweekday(cutoff_time))
+            cutoff_delta = datetime.timedelta(days=datetime.datetime.weekday(cutoff_time))
 
             cutoff_time = (cutoff_time - cutoff_delta + datetime.timedelta(days=7))
             days_remaining = (cutoff_time - datetime.datetime(cd.year, cd.month, cd.day)).days
