@@ -36,6 +36,7 @@ setup(
     ],
     install_requires=[
         "incremental>=16.9.1",
+        "icalendar",
         "Twisted",
         "appdirs",
         "attrs",

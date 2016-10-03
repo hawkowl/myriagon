@@ -24,7 +24,11 @@ import datetime
 import appdirs
 import json
 import time
+import pytz
 
+from hashlib import sha1
+from icalendar import Calendar, Event
+from icalendar.prop import vDatetime
 from attr.validators import instance_of
 from math import floor
 from typing import List
@@ -302,6 +306,43 @@ def make_task_window(app, myr_task, update_ui):
     task_windows[myr_task.id] = window
 
 
+def open_export(window, myr_task):
+
+    filename = toga.save_file_dialog(
+        window, "Export " + myr_task.name + " to calendar",
+        myr_task.name, ("ics",))
+
+    if filename is None:
+        return
+
+    spent = load_time_spent(myr_task)
+
+    def display(cal):
+        print(cal.to_ical().replace(b'\r\n', b'\n').strip().decode('utf8'))
+
+    cal = Calendar()
+    cal.add('prodid', '-//atleastfornow.net//myriagon//')
+    cal.add('version', '2.0')
+
+    for time in spent:
+        e = Event()
+
+        s = sha1((str(time.started) + str(time.finished)).encode('utf8'))
+
+        e['uid'] = s.digest().hex()
+        e['summary'] = myr_task.name
+        e['dtstart'] = vDatetime(datetime.datetime.utcfromtimestamp(time.started).replace(tzinfo=pytz.utc))
+        e['dtend'] = vDatetime(datetime.datetime.utcfromtimestamp(time.finished).replace(tzinfo=pytz.utc))
+
+        cal.add_component(e)
+
+    with open(filename, 'wb') as f:
+        f.write(cal.to_ical())
+
+    toga.info_dialog(None, myr_task.name + " saved!",
+                     "Your task history was exported to " + filename)
+
+
 def make_add_task_window(app, update_ui, update=False):
     """
     Adding tasks...
@@ -334,7 +375,6 @@ def make_add_task_window(app, update_ui, update=False):
 
     name_entry = toga.TextInput(placeholder='"Practice painting"')
     name_entry.style.width = (WINDOW_WIDTH - PADDING_WIDTH * 2) / 4 * 3
-
 
     name_box.add(name_label)
     name_box.add(name_entry)
@@ -478,23 +518,28 @@ def build(app):
             itembox.style.flex_direction = "row"
 
             lbl = toga.Label(task.name)
-            lbl.style.width = (WINDOW_WIDTH - PADDING_WIDTH * 2) / 4 * 3
+            lbl.style.width = (WINDOW_WIDTH - PADDING_WIDTH * 2) / 4 * 2
             lbl.set_font(item_label_font)
 
+            export_btn = toga.Button("Export")
+            export_btn.style.width = (WINDOW_WIDTH - PADDING_WIDTH * 2) / 2 / 3
+
             edit_btn = toga.Button("Edit")
-            edit_btn.style.width = (WINDOW_WIDTH - PADDING_WIDTH * 2) / 4 / 2
+            edit_btn.style.width = (WINDOW_WIDTH - PADDING_WIDTH * 2) / 2 / 3
 
             btn = toga.Button("Open")
-            btn.style.width = (WINDOW_WIDTH - PADDING_WIDTH * 2) / 4 / 2
+            btn.style.width = (WINDOW_WIDTH - PADDING_WIDTH * 2) / 2 / 3
 
             lbl.style.height = btn.style.height
 
             itembox.add(lbl)
+            itembox.add(export_btn)
             itembox.add(edit_btn)
             itembox.add(btn)
             a = task.id
 
             def add_buttons(task):
+                export_btn.on_press = lambda _: open_export(app.main_window, task)
                 edit_btn.on_press = lambda _: make_add_task_window(app, build_itemlist, update=task)
                 btn.on_press = lambda _: make_task_window(app, task, build_itemlist)
 
@@ -510,6 +555,11 @@ def build(app):
     button = toga.Button('Add New Task')
 
     def open_new(t):
+
+        from .cocoa_extras import Notification
+        n = Notification("foo")
+        n.show()
+
         window = make_add_task_window(app, build_itemlist)
 
     button.on_press = open_new
@@ -517,11 +567,6 @@ def build(app):
     box.add(button_box)
 
     app.main_window.title = "Myriagon"
-
-    from .cocoa_extras import Notification
-
-    n = Notification("go")
-    n.show()
 
     return box
 
