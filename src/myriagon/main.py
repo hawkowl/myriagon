@@ -339,7 +339,7 @@ def open_export(window, myr_task):
     with open(filename, 'wb') as f:
         f.write(cal.to_ical())
 
-    toga.info_dialog(None, myr_task.name + " saved!",
+    toga.info_dialog(window, myr_task.name + " saved!",
                      "Your task history was exported to " + filename)
 
 
