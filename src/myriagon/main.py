@@ -469,7 +469,8 @@ def make_add_task_window(app, update_ui, update=False):
                           name=name_entry.value,
                           budget_seconds=get_seconds_per(),
                           budget_per=per_duration_entry.value,
-                          cutoff=organised_entry.value))
+                          cutoff=organised_entry.value,
+                          since=update.since))
 
         save_tasks(tasks)
         update_ui()
