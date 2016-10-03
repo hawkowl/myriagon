@@ -556,9 +556,9 @@ def build(app):
 
     def open_new(t):
 
-        from .cocoa_extras import Notification
-        n = Notification("foo")
-        n.show()
+        #from .cocoa_extras import Notification
+        #n = Notification("foo")
+        #n.show()
 
         window = make_add_task_window(app, build_itemlist)
 
