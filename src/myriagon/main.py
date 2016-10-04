@@ -247,6 +247,7 @@ def make_task_window(app, myr_task, update_ui):
     timer_box.add(per_label)
 
     button_box = toga.Box()
+
     button = toga.Button('Start')
     button.style.margin_top = 5
 
@@ -273,6 +274,7 @@ def make_task_window(app, myr_task, update_ui):
         update_label()
         update_per_label()
         update_ui()
+
 
     def dt(btn):
         started[0] = floor(time.time())
@@ -308,7 +310,7 @@ def make_task_window(app, myr_task, update_ui):
 
 def open_export(window, myr_task):
 
-    filename = toga.save_file_dialog(
+    filename = window.dialogs.save_file(
         window, "Export " + myr_task.name + " to calendar",
         myr_task.name, ("ics",))
 
