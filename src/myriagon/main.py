@@ -125,19 +125,50 @@ def save_time_spent(task, time):
 def get_time_for_session(task, time):
 
     cd = datetime.date.today()
-    cutoff_time = datetime.datetime(cd.year, cd.month, cd.day)
 
     if task.cutoff == "week":
+
+        cutoff_time = datetime.datetime(cd.year, cd.month, cd.day)
         cutoff_delta = datetime.timedelta(
             days=datetime.datetime.weekday(cutoff_time))
 
-    cutoff_time = (cutoff_time - cutoff_delta).timestamp()
+        cutoff_time = (cutoff_time - cutoff_delta).timestamp()
+
+    elif task.cutoff == "month":
+        cutoff_time = datetime.datetime(cd.year, cd.month, 1)
+
 
     qualifiers = filter(lambda t: t.started > cutoff_time, time)
     time_spent_this_per = sum(map(
         lambda s: s.finished - s.started, qualifiers ))
 
     return time_spent_this_per
+
+
+def get_days_in_month(year, month):
+
+    # 30 days has september, april, june, and november
+    # all the rest have 31, except for feb
+    # special snowflake, isn't it
+
+    is_leap_year = year % 4 == 0
+
+    days = {
+        1: 31,
+        2: 29 if is_leap_year else 28,
+        3: 31,
+        4: 30,
+        5: 31,
+        6: 30,
+        7: 31,
+        8: 31,
+        9: 31,
+        10: 31,
+        11: 30,
+        12: 31,
+    }
+
+    return days[month]
 
 
 def get_time_needed_for_session(task):
@@ -157,6 +188,25 @@ def get_time_needed_for_session(task):
         if task.budget_per == "day":
             return task.budget_seconds * days
         elif task.budget_per == "week":
+            return task.budget_seconds
+
+    if task.cutoff == "month":
+
+        days_in_month = get_days_in_month(cd.year, cd.month)
+        cutoff_delta = datetime.datetime(cd.year, cd.month, 1)
+
+        if task.since > cutoff_delta.timestamp():
+            days = days_in_month - cd.day + 1
+        else:
+            days = days_in_month
+
+        if task.budget_per == "day":
+            return task.budget_seconds * days
+
+        elif task.budget_per == "week":
+            return days // 7 * 7 * task.budget_seconds
+
+        elif task.budget_per == "month":
             return task.budget_seconds
 
 
@@ -200,21 +250,27 @@ def make_task_window(app, myr_task, update_ui):
         cutoff_text = "today"
     elif myr_task.cutoff == "week":
         cutoff_text = "this week"
+    elif myr_task.cutoff == "month":
+        cutoff_text = "this month"
 
     per_label = toga.Label("remaining " + cutoff_text, alignment=toga.constants.CENTER_ALIGNED)
     per_label.style.width = WINDOW_WIDTH - PADDING_WIDTH * 2
 
     def update_per_label():
         cd = datetime.date.today()
-        cutoff_time = datetime.datetime(cd.year, cd.month, cd.day)
-
         txt = "remaining " + cutoff_text
 
         if myr_task.cutoff == "week":
+
+            cutoff_time = datetime.datetime(cd.year, cd.month, cd.day)
             cutoff_delta = datetime.timedelta(days=datetime.datetime.weekday(cutoff_time))
 
             cutoff_time = (cutoff_time - cutoff_delta + datetime.timedelta(days=7))
             days_remaining = (cutoff_time - datetime.datetime(cd.year, cd.month, cd.day)).days
+        elif myr_task.cutoff == "month":
+
+            g = get_days_in_month(cd.year, cd.month)
+            days_remaining = g - cd.day + 1
 
         if needed - spent[0] > 0:
 
@@ -394,9 +450,9 @@ def make_add_task_window(app, update_ui, update=False):
     per_amount_entry = toga.TextInput(placeholder="20")
     per_amount_entry.style.width = 30
 
-    per_amount_entry_type = toga.TextInput(placeholder="minutes")
+    per_amount_entry_type = toga.Selection(
+        items=("seconds", "minutes", "hours"))
     per_amount_entry_type.style.margin_left = 4
-    per_amount_entry_type.style.width = 10
 
     per_amount_for = toga.Label("a")
     per_amount_for.style.margin_right = 4
@@ -404,7 +460,7 @@ def make_add_task_window(app, update_ui, update=False):
     per_amount_for.style.margin_top = 2
 
     # Should be drop down box
-    per_duration_entry = toga.TextInput(placeholder="day")
+    per_duration_entry = toga.Selection(items=("day", "week", "month"))
 
     per_box.add(per_label)
     per_box.add(per_amount_entry)
@@ -413,7 +469,7 @@ def make_add_task_window(app, update_ui, update=False):
     per_box.add(per_duration_entry)
 
     organised_box = toga.Box()
-    organised_box.style.margin_top = 7
+    organised_box.style.margin_top = 2
     organised_box.style.flex_direction = 'row'
 
     organised_label = toga.Label("Organised by", alignment=toga.constants.RIGHT_ALIGNED)
@@ -421,7 +477,7 @@ def make_add_task_window(app, update_ui, update=False):
     organised_label.style.margin_right = 7
     organised_label.style.width = (WINDOW_WIDTH - PADDING_WIDTH * 2) / 4
 
-    organised_entry = toga.TextInput(placeholder="week")
+    organised_entry = toga.Selection(items=("day", "week", "month", "year"))
 
     organised_box.add(organised_label)
     organised_box.add(organised_entry)
@@ -432,7 +488,8 @@ def make_add_task_window(app, update_ui, update=False):
     box.add(controls_box)
 
     button_box = toga.Box()
-    button_box.style.margin_top = PADDING_WIDTH
+    button_box.style.margin_top = 2
+    button_box.style.margin_bottom = PADDING_WIDTH
 
     button = toga.Button("Save")
 
@@ -483,8 +540,17 @@ def make_add_task_window(app, update_ui, update=False):
         button.on_press = save_new_task
     else:
         name_entry.value = update.name
-        per_amount_entry.value = update.budget_seconds
-        per_amount_entry_type.value = "seconds"
+
+        if update.budget_seconds > 3599:
+            per_amount_entry.value = update.budget_seconds / 3600
+            per_amount_entry_type.value = "hours"
+        elif update.budget_seconds > 59:
+            per_amount_entry.value = update.budget_seconds / 60
+            per_amount_entry_type.value = "minutes"
+        else:
+            per_amount_entry.value = update.budget_seconds
+            per_amount_entry_type.value = "seconds"
+
         per_duration_entry.value = update.budget_per
         organised_entry.value = update.cutoff
 
