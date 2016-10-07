@@ -12,6 +12,7 @@ from twisted.python.filepath import FilePath
 
 from ._trash import get_days_in_month
 
+
 @attr.s
 class TimeSpent(object):
     started = attr.ib(validator=instance_of(int))
@@ -26,9 +27,10 @@ def seconds_into_clock(total):
     else:
         prefix = ""
 
-    return "{}{:02d}:{:02d}:{:02d}".format(prefix, floor(total / 3600),
-                                           floor((total % 3600) / 60),
-                                           floor(total % 60))
+    return "{}{:02d}:{:02d}:{:02d}".format(
+        prefix, floor(total / 3600),
+        floor((total % 3600) / 60),
+        floor(total % 60))
 
 
 def load_time_spent(task):
@@ -56,7 +58,6 @@ def save_time_spent(task, time):
     task_time_file.setContent(json.dumps(cattr.dumps(time)).encode('utf8'))
 
 
-
 def get_time_for_session(task, time):
 
     cd = datetime.date.today()
@@ -72,14 +73,11 @@ def get_time_for_session(task, time):
     elif task.cutoff == "month":
         cutoff_time = datetime.datetime(cd.year, cd.month, 1).timestamp()
 
-
     qualifiers = filter(lambda t: t.started > cutoff_time, time)
     time_spent_this_per = sum(map(
-        lambda s: s.finished - s.started, qualifiers ))
+        lambda s: s.finished - s.started, qualifiers))
 
     return time_spent_this_per
-
-
 
 
 def get_time_needed_for_session(task):
@@ -101,7 +99,7 @@ def get_time_needed_for_session(task):
         elif task.budget_per == "week":
             return task.budget_seconds
         elif task.budget_per == "month":
-            return task.budget_seconds / 4 #  4 weeks in a month rite
+            return task.budget_seconds / 4  # 4 weeks in a month rite
 
     if task.cutoff == "month":
 

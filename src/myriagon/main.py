@@ -24,6 +24,7 @@ from ._time import (
     save_time_spent, load_time_spent,
     get_time_for_session, get_time_needed_for_session
 )
+from .trash import get_days_in_month
 
 if platform.isMacOSX():
     DISPLAY_FONT = "Helvetica Light"
@@ -41,7 +42,6 @@ WINDOW_WIDTH = 640
 PADDING_WIDTH = 15
 
 task_windows = {}
-
 
 
 def make_task_window(app, myr_task, update_ui):
@@ -75,7 +75,8 @@ def make_task_window(app, myr_task, update_ui):
 
     session_font = toga.Font(DISPLAY_FONT, 40 * FONT_RATIO)
 
-    session_label = toga.Label("00:00:00", alignment=toga.constants.CENTER_ALIGNED)
+    session_label = toga.Label("00:00:00",
+                               alignment=toga.constants.CENTER_ALIGNED)
     session_label.style.width = WINDOW_WIDTH - PADDING_WIDTH * 2
     session_label.style.height = 42
     session_label.set_font(session_font)
@@ -87,7 +88,8 @@ def make_task_window(app, myr_task, update_ui):
     elif myr_task.cutoff == "month":
         cutoff_text = "this month"
 
-    per_label = toga.Label("remaining " + cutoff_text, alignment=toga.constants.CENTER_ALIGNED)
+    per_label = toga.Label("remaining " + cutoff_text,
+                           alignment=toga.constants.CENTER_ALIGNED)
     per_label.style.width = WINDOW_WIDTH - PADDING_WIDTH * 2
 
     def update_per_label():
@@ -97,10 +99,14 @@ def make_task_window(app, myr_task, update_ui):
         if myr_task.cutoff == "week":
 
             cutoff_time = datetime.datetime(cd.year, cd.month, cd.day)
-            cutoff_delta = datetime.timedelta(days=datetime.datetime.weekday(cutoff_time))
+            cutoff_delta = datetime.timedelta(
+                days=datetime.datetime.weekday(cutoff_time))
 
-            cutoff_time = (cutoff_time - cutoff_delta + datetime.timedelta(days=7))
-            days_remaining = (cutoff_time - datetime.datetime(cd.year, cd.month, cd.day)).days
+            cutoff_time = (
+                cutoff_time - cutoff_delta + datetime.timedelta(days=7))
+            days_remaining = (
+                cutoff_time - datetime.datetime(cd.year, cd.month, cd.day)
+            ).days
         elif myr_task.cutoff == "month":
 
             g = get_days_in_month(cd.year, cd.month)
@@ -113,10 +119,10 @@ def make_task_window(app, myr_task, update_ui):
             else:
                 total = needed - spent[0]
 
-            txt += " (" + seconds_into_clock(total / days_remaining) + " per day)"
+            txt += (" (" + seconds_into_clock(total / days_remaining)
+                    + " per day)")
 
         per_label.text = txt
-
 
     def update_label():
         if started[0]:
@@ -127,7 +133,6 @@ def make_task_window(app, myr_task, update_ui):
             this_session = 0
         timer_label.text = seconds_into_clock(total)
         session_label.text = seconds_into_clock(this_session)
-
 
     update_label()
     update_per_label()
@@ -165,7 +170,6 @@ def make_task_window(app, myr_task, update_ui):
         update_per_label()
         update_ui()
 
-
     def dt(btn):
         started[0] = floor(time.time())
         button.label = "Stop"
@@ -183,7 +187,7 @@ def make_task_window(app, myr_task, update_ui):
     box.add(button_box)
 
     window = toga.Window(title=myr_task.name + " – Myriagon",
-                         position=(150,150), size=(WINDOW_WIDTH,200),
+                         position=(150, 150), size=(WINDOW_WIDTH, 200),
                          resizeable=False)
 
     def on_close():
@@ -222,8 +226,10 @@ def open_export(window, myr_task):
 
         e['uid'] = s.digest().hex()
         e['summary'] = myr_task.name
-        e['dtstart'] = vDatetime(datetime.datetime.utcfromtimestamp(session.started).replace(tzinfo=pytz.utc))
-        e['dtend'] = vDatetime(datetime.datetime.utcfromtimestamp(session.finished).replace(tzinfo=pytz.utc))
+        e['dtstart'] = vDatetime(datetime.datetime.utcfromtimestamp(
+            session.started).replace(tzinfo=pytz.utc))
+        e['dtend'] = vDatetime(datetime.datetime.utcfromtimestamp(
+            session.finished).replace(tzinfo=pytz.utc))
 
         cal.add_component(e)
 
@@ -304,7 +310,8 @@ def make_add_task_window(app, update_ui, update=False):
     organised_box.style.margin_top = 2
     organised_box.style.flex_direction = 'row'
 
-    organised_label = toga.Label("Organised by", alignment=toga.constants.RIGHT_ALIGNED)
+    organised_label = toga.Label("Organised by",
+                                 alignment=toga.constants.RIGHT_ALIGNED)
     organised_label.style.margin_top = 2
     organised_label.style.margin_right = 7
     organised_label.style.width = (WINDOW_WIDTH - PADDING_WIDTH * 2) / 4
@@ -337,11 +344,12 @@ def make_add_task_window(app, update_ui, update=False):
         return floor(seconds_per)
 
     def save_new_task(btn):
-
         try:
             float(per_amount_entry.value)
         except:
-            window.info_dialog("You didn't enter a number!", "Please set the number of " + per_amount_entry_type.value)
+            window.info_dialog(
+                "You didn't enter a number!",
+                "Please set the number of " + per_amount_entry_type.value)
             return
 
         tasks = load_tasks()
@@ -357,14 +365,14 @@ def make_add_task_window(app, update_ui, update=False):
         update_ui()
         window.close()
 
-
     def update_task(btn):
-
         try:
             float(per_amount_entry.value)
         except Exception as e:
             print(e)
-            window.info_dialog("You didn't enter a number!", "Please set the number of " + per_amount_entry_type.value)
+            window.info_dialog(
+                "You didn't enter a number!",
+                "Please set the number of " + per_amount_entry_type.value)
             return
 
         tasks = load_tasks()
@@ -380,7 +388,6 @@ def make_add_task_window(app, update_ui, update=False):
         save_tasks(tasks)
         update_ui()
         window.close()
-
 
     if update is False:
         button.on_press = save_new_task
@@ -451,12 +458,14 @@ def build(app):
             itembox.add(export_btn)
             itembox.add(edit_btn)
             itembox.add(btn)
-            a = task.id
 
             def add_buttons(task):
-                export_btn.on_press = lambda _: open_export(app.main_window, task)
-                edit_btn.on_press = lambda _: make_add_task_window(app, build_itemlist, update=task)
-                btn.on_press = lambda _: make_task_window(app, task, build_itemlist)
+                export_btn.on_press = lambda _: open_export(
+                    app.main_window, task)
+                edit_btn.on_press = lambda _: make_add_task_window(
+                    app, build_itemlist, update=task)
+                btn.on_press = lambda _: make_task_window(
+                    app, task, build_itemlist)
 
             add_buttons(task)
             fullbox.add(itembox)
@@ -470,12 +479,7 @@ def build(app):
     button = toga.Button('Add New Task')
 
     def open_new(t):
-
-        #from .cocoa_extras import Notification
-        #n = Notification("foo")
-        #n.show()
-
-        window = make_add_task_window(app, build_itemlist)
+        make_add_task_window(app, build_itemlist)
 
     button.on_press = open_new
     button_box.add(button)
@@ -487,7 +491,9 @@ def build(app):
 
 
 def main():
-    app = toga.App('Myriagon', 'net.atleastfornow.myriagon', startup=build, icon=FilePath(__file__).parent().child("myriagon.icns").path)
+    app = toga.App(
+        'Myriagon', 'net.atleastfornow.myriagon', startup=build,
+        icon=FilePath(__file__).parent().child("myriagon.icns").path)
     app.main_loop()
 
 

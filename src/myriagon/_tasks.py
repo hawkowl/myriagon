@@ -24,7 +24,6 @@ class Task(object):
     since = attr.ib(validator=instance_of(int))
 
 
-
 def load_tasks():
 
     dest = FilePath(appdirs.user_data_dir("myriagon", "hawkowl"))
@@ -44,6 +43,7 @@ def load_tasks():
 
     loaded.sort(key=sort, reverse=True)
     return loaded
+
 
 def save_tasks(tasks):
 
