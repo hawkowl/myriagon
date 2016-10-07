@@ -135,7 +135,7 @@ def get_time_for_session(task, time):
         cutoff_time = (cutoff_time - cutoff_delta).timestamp()
 
     elif task.cutoff == "month":
-        cutoff_time = datetime.datetime(cd.year, cd.month, 1)
+        cutoff_time = datetime.datetime(cd.year, cd.month, 1).timestamp()
 
 
     qualifiers = filter(lambda t: t.started > cutoff_time, time)
@@ -189,6 +189,8 @@ def get_time_needed_for_session(task):
             return task.budget_seconds * days
         elif task.budget_per == "week":
             return task.budget_seconds
+        elif task.budget_per == "month":
+            return task.budget_seconds / 4 # 4 weeks rite
 
     if task.cutoff == "month":
 
@@ -366,8 +368,8 @@ def make_task_window(app, myr_task, update_ui):
 
 def open_export(window, myr_task):
 
-    filename = window.dialogs.save_file(
-        window, "Export " + myr_task.name + " to calendar",
+    filename = window.save_file_dialog(
+        "Export " + myr_task.name + " to calendar",
         myr_task.name, ("ics",))
 
     if filename is None:
@@ -397,8 +399,8 @@ def open_export(window, myr_task):
     with open(filename, 'wb') as f:
         f.write(cal.to_ical())
 
-    toga.info_dialog(window, myr_task.name + " saved!",
-                     "Your task history was exported to " + filename)
+    window.info_dialog(myr_task.name + " saved!",
+                       "Your task history was exported to " + filename)
 
 
 def make_add_task_window(app, update_ui, update=False):
@@ -447,7 +449,7 @@ def make_add_task_window(app, update_ui, update=False):
     per_label.style.margin_right = 7
 
     # Should be number clicky
-    per_amount_entry = toga.TextInput(placeholder="20")
+    per_amount_entry = toga.NumberInput(max_value=99999)
     per_amount_entry.style.width = 30
 
     per_amount_entry_type = toga.Selection(
@@ -459,7 +461,6 @@ def make_add_task_window(app, update_ui, update=False):
     per_amount_for.style.margin_left = 7
     per_amount_for.style.margin_top = 2
 
-    # Should be drop down box
     per_duration_entry = toga.Selection(items=("day", "week", "month"))
 
     per_box.add(per_label)
@@ -505,6 +506,13 @@ def make_add_task_window(app, update_ui, update=False):
         return floor(seconds_per)
 
     def save_new_task(btn):
+
+        try:
+            float(per_amount_entry.value)
+        except:
+            window.info_dialog("You didn't enter a number!", "Please set the number of " + per_amount_entry_type.value)
+            return
+
         tasks = load_tasks()
 
         tasks.append(Task(id=randint(0, 9999999999999999),
@@ -520,6 +528,13 @@ def make_add_task_window(app, update_ui, update=False):
 
 
     def update_task(btn):
+
+        try:
+            float(per_amount_entry.value)
+        except Exception as e:
+            print(e)
+            window.info_dialog("You didn't enter a number!", "Please set the number of " + per_amount_entry_type.value)
+            return
 
         tasks = load_tasks()
         tasks.remove(list(filter(lambda x: x.id == update.id, tasks))[0])
@@ -641,7 +656,7 @@ def build(app):
 
 
 def main():
-    app = toga.App('Myriagon', 'net.atleastfornow.myriagon', startup=build)
+    app = toga.App('Myriagon', 'net.atleastfornow.myriagon', startup=build, icon=FilePath(__file__).parent().child("myriagon.icns").path)
     app.main_loop()
 
 
