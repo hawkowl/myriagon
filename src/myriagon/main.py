@@ -1,7 +1,29 @@
 import toga
+import time
+import datetime
+import pytz
 import toga.constants
 
 from twisted.python.runtime import platform
+
+from twisted.internet.task import LoopingCall
+from twisted.python.filepath import FilePath
+
+from hashlib import sha1
+from icalendar import Calendar, Event
+from icalendar.prop import vDatetime
+from math import floor
+from random import randint
+
+from ._tasks import (
+    Task,
+    load_tasks, save_tasks
+)
+from ._time import (
+    TimeSpent, seconds_into_clock,
+    save_time_spent, load_time_spent,
+    get_time_for_session, get_time_needed_for_session
+)
 
 if platform.isMacOSX():
     DISPLAY_FONT = "Helvetica Light"
@@ -14,202 +36,12 @@ elif platform.isLinux():
     from twisted.internet.gireactor import install
     install(True)
 
-from twisted.internet import reactor
-from twisted.internet.task import LoopingCall
-from twisted.python.filepath import FilePath
-
-import attr
-import cattr
-import datetime
-import appdirs
-import json
-import time
-import pytz
-
-from hashlib import sha1
-from icalendar import Calendar, Event
-from icalendar.prop import vDatetime
-from attr.validators import instance_of
-from math import floor
-from typing import List
-from random import randint
-
-
-@attr.s
-class Task(object):
-    id = attr.ib(validator=instance_of(int))
-    name = attr.ib(validator=instance_of(str))
-    budget_seconds = attr.ib(validator=instance_of(int))
-    budget_per = attr.ib(validator=instance_of(str))
-    cutoff = attr.ib(validator=instance_of(str))
-    since = attr.ib(validator=instance_of(int))
-
-
-@attr.s
-class TimeSpent(object):
-    started = attr.ib(validator=instance_of(int))
-    finished = attr.ib(validator=instance_of(int))
-
 
 WINDOW_WIDTH = 640
 PADDING_WIDTH = 15
 
 task_windows = {}
 
-
-def seconds_into_clock(total):
-
-    if total < 0:
-        prefix = "-"
-        total = -total
-    else:
-        prefix = ""
-
-    return "{}{:02d}:{:02d}:{:02d}".format(prefix, floor(total / 3600), floor((total % 3600) / 60), floor(total % 60))
-
-
-def load_tasks():
-
-    dest = FilePath(appdirs.user_data_dir("myriagon", "hawkowl"))
-    task_file = dest.child("tasks.json")
-
-    if not task_file.exists():
-        dest.makedirs(True)
-        task_file.setContent(b"[]")
-
-    loaded = cattr.loads(
-        json.loads(task_file.getContent().decode('utf8')),
-        List[Task])
-
-    def sort(x):
-        time = load_time_spent(x)
-        return get_time_needed_for_session(x) - get_time_for_session(x, time)
-
-    loaded.sort(key=sort, reverse=True)
-    return loaded
-
-def save_tasks(tasks):
-
-    dest = FilePath(appdirs.user_data_dir("myriagon", "hawkowl"))
-    dest.makedirs(True)
-
-    task_file = dest.child("tasks.json")
-    task_file.setContent(json.dumps(cattr.dumps(tasks)).encode('utf8'))
-
-
-def load_time_spent(task):
-
-    dest = FilePath(appdirs.user_data_dir("myriagon", "hawkowl")).child("time")
-    dest.makedirs(True)
-
-    task_time_file = dest.child(str(task.id) + ".json")
-
-    if not task_time_file.exists():
-        dest.makedirs(True)
-        task_time_file.setContent(b"[]")
-
-    return cattr.loads(
-        json.loads(task_time_file.getContent().decode('utf8')),
-        List[TimeSpent])
-
-
-def save_time_spent(task, time):
-
-    dest = FilePath(appdirs.user_data_dir("myriagon", "hawkowl")).child("time")
-    dest.makedirs(True)
-
-    task_time_file = dest.child(str(task.id) + ".json")
-    task_time_file.setContent(json.dumps(cattr.dumps(time)).encode('utf8'))
-
-
-def get_time_for_session(task, time):
-
-    cd = datetime.date.today()
-
-    if task.cutoff == "week":
-
-        cutoff_time = datetime.datetime(cd.year, cd.month, cd.day)
-        cutoff_delta = datetime.timedelta(
-            days=datetime.datetime.weekday(cutoff_time))
-
-        cutoff_time = (cutoff_time - cutoff_delta).timestamp()
-
-    elif task.cutoff == "month":
-        cutoff_time = datetime.datetime(cd.year, cd.month, 1).timestamp()
-
-
-    qualifiers = filter(lambda t: t.started > cutoff_time, time)
-    time_spent_this_per = sum(map(
-        lambda s: s.finished - s.started, qualifiers ))
-
-    return time_spent_this_per
-
-
-def get_days_in_month(year, month):
-
-    # 30 days has september, april, june, and november
-    # all the rest have 31, except for feb
-    # special snowflake, isn't it
-
-    is_leap_year = year % 4 == 0
-
-    days = {
-        1: 31,
-        2: 29 if is_leap_year else 28,
-        3: 31,
-        4: 30,
-        5: 31,
-        6: 30,
-        7: 31,
-        8: 31,
-        9: 31,
-        10: 31,
-        11: 30,
-        12: 31,
-    }
-
-    return days[month]
-
-
-def get_time_needed_for_session(task):
-
-    cd = datetime.date.today()
-    cutoff_time = datetime.datetime(cd.year, cd.month, cd.day)
-
-    if task.cutoff == "week":
-        cutoff_delta = cutoff_time - datetime.timedelta(
-            days=datetime.datetime.weekday(cutoff_time))
-
-        if task.since > cutoff_delta.timestamp():
-            days = 7 - datetime.datetime.weekday(cutoff_time)
-        else:
-            days = 7
-
-        if task.budget_per == "day":
-            return task.budget_seconds * days
-        elif task.budget_per == "week":
-            return task.budget_seconds
-        elif task.budget_per == "month":
-            return task.budget_seconds / 4 # 4 weeks rite
-
-    if task.cutoff == "month":
-
-        days_in_month = get_days_in_month(cd.year, cd.month)
-        cutoff_delta = datetime.datetime(cd.year, cd.month, 1)
-
-        if task.since > cutoff_delta.timestamp():
-            days = days_in_month - cd.day + 1
-        else:
-            days = days_in_month
-
-        if task.budget_per == "day":
-            return task.budget_seconds * days
-
-        elif task.budget_per == "week":
-            return days // 7 * 7 * task.budget_seconds
-
-        elif task.budget_per == "month":
-            return task.budget_seconds
 
 
 def make_task_window(app, myr_task, update_ui):
@@ -384,15 +216,14 @@ def open_export(window, myr_task):
     cal.add('prodid', '-//atleastfornow.net//myriagon//')
     cal.add('version', '2.0')
 
-    for time in spent:
+    for session in spent:
         e = Event()
-
-        s = sha1((str(time.started) + str(time.finished)).encode('utf8'))
+        s = sha1((str(session.started) + str(session.finished)).encode('utf8'))
 
         e['uid'] = s.digest().hex()
         e['summary'] = myr_task.name
-        e['dtstart'] = vDatetime(datetime.datetime.utcfromtimestamp(time.started).replace(tzinfo=pytz.utc))
-        e['dtend'] = vDatetime(datetime.datetime.utcfromtimestamp(time.finished).replace(tzinfo=pytz.utc))
+        e['dtstart'] = vDatetime(datetime.datetime.utcfromtimestamp(session.started).replace(tzinfo=pytz.utc))
+        e['dtend'] = vDatetime(datetime.datetime.utcfromtimestamp(session.finished).replace(tzinfo=pytz.utc))
 
         cal.add_component(e)
 
