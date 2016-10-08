@@ -258,6 +258,7 @@ def make_add_task_window(app, update_ui, update=False):
 
     box = toga.Box()
     box.style.padding = PADDING_WIDTH
+
     if OSX:
         box.style.padding_top = PADDING_WIDTH / 2
         box.style.padding_bottom = PADDING_WIDTH * 2
@@ -480,6 +481,10 @@ def build(app):
     build_itemlist()
 
     button_box = toga.Box()
+
+    if not OSX:
+        button_box.style.margin_top = 7
+
     button = toga.Button('Add New Task')
 
     def open_new(t):
