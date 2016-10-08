@@ -24,7 +24,7 @@ from ._time import (
     save_time_spent, load_time_spent,
     get_time_for_session, get_time_needed_for_session
 )
-from .trash import get_days_in_month
+from ._trash import get_days_in_month
 
 if platform.isMacOSX():
     DISPLAY_FONT = "Helvetica Light"
