@@ -337,6 +337,9 @@ def make_add_task_window(app, update_ui, update=False):
     button = toga.Button("Save")
     button_box.add(button)
 
+    if not OSX:
+        button_box.style.margin_top = 7
+
     box.add(button_box)
     box.rehint()
 
@@ -481,9 +484,6 @@ def build(app):
     build_itemlist()
 
     button_box = toga.Box()
-
-    if not OSX:
-        button_box.style.margin_top = 7
 
     button = toga.Button('Add New Task')
 
