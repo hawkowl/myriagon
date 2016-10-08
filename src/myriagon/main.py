@@ -331,6 +331,7 @@ def make_add_task_window(app, update_ui, update=False):
     button_box.style.margin_bottom = PADDING_WIDTH
 
     button = toga.Button("Save")
+    button.style.margin_top = 7
 
     def get_seconds_per():
 
