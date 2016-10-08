@@ -29,11 +29,13 @@ from ._trash import get_days_in_month
 if platform.isMacOSX():
     DISPLAY_FONT = "Helvetica Light"
     FONT_RATIO = 1
+    OSX = True
     from twisted.internet.cfreactor import install
     install()
 elif platform.isLinux():
     DISPLAY_FONT = "Ubuntu Light"
     FONT_RATIO = 0.8
+    OSX = False
     from twisted.internet.gireactor import install
     install(True)
 
@@ -251,12 +253,14 @@ def make_add_task_window(app, update_ui, update=False):
     else:
         window_title = "Edit " + update.name
 
-    window = toga.Window(size=(WINDOW_WIDTH, 0), title=window_title,
+    window = toga.Window(size=(WINDOW_WIDTH + PADDING_WIDTH*2, 0), title=window_title,
                          resizeable=False)
 
     box = toga.Box()
-
     box.style.padding = PADDING_WIDTH
+    if OSX:
+        box.style.padding_top = PADDING_WIDTH / 2
+        box.style.padding_bottom = PADDING_WIDTH * 2
 
     controls_box = toga.Box()
     controls_box.style.flex_direction = 'column'
@@ -265,13 +269,12 @@ def make_add_task_window(app, update_ui, update=False):
     name_box.style.flex_direction = 'row'
     name_label = toga.Label("Name:", alignment=toga.constants.RIGHT_ALIGNED)
 
-    name_label.style.padding_top = 3
     name_label.style.width = (WINDOW_WIDTH - PADDING_WIDTH * 2) / 4
-    name_label.style.margin_top = 2
+    name_label.style.margin_top = 3
     name_label.style.margin_right = 7
 
     name_entry = toga.TextInput(placeholder='"Practice painting"')
-    name_entry.style.width = (WINDOW_WIDTH - PADDING_WIDTH * 2) / 4 * 3
+    name_entry.style.width = ((WINDOW_WIDTH - PADDING_WIDTH * 2) / 4) * 3
 
     name_box.add(name_label)
     name_box.add(name_entry)
@@ -287,7 +290,6 @@ def make_add_task_window(app, update_ui, update=False):
 
     # Should be number clicky
     per_amount_entry = toga.NumberInput(max_value=99999)
-    per_amount_entry.style.width = 30
 
     per_amount_entry_type = toga.Selection(
         items=("seconds", "minutes", "hours"))
@@ -324,13 +326,18 @@ def make_add_task_window(app, update_ui, update=False):
     controls_box.add(name_box)
     controls_box.add(per_box)
     controls_box.add(organised_box)
+    controls_box.rehint()
+
     box.add(controls_box)
 
     button_box = toga.Box()
     button_box.style.margin_top = 2
 
     button = toga.Button("Save")
-    button.style.margin_bottom = PADDING_WIDTH
+    button_box.add(button)
+
+    box.add(button_box)
+    box.rehint()
 
     def get_seconds_per():
 
@@ -408,9 +415,6 @@ def make_add_task_window(app, update_ui, update=False):
         organised_entry.value = update.cutoff
 
         button.on_press = update_task
-
-    button_box.add(button)
-    box.add(button_box)
 
     window.content = box
     window.show()
