@@ -1,7 +1,8 @@
-import toga
-import time
+import csv
 import datetime
 import pytz
+import time
+import toga
 import toga.constants
 
 from twisted.python.runtime import platform
@@ -207,13 +208,48 @@ def make_task_window(app, myr_task, update_ui):
 def open_export(window, myr_task):
 
     filename = window.save_file_dialog(
-        "Export " + myr_task.name + " to calendar",
-        myr_task.name, ("ics",))
+        "Export " + myr_task.name,
+        myr_task.name, ("ics", "csv"))
 
     if filename is None:
         return
 
     spent = load_time_spent(myr_task)
+
+    if filename[-3:] == "ics":
+        export_to_ical(window, myr_task, spent, filename)
+    elif filename[-3:] == "csv":
+        export_to_csv(window, myr_task, spent, filename)
+    else:
+        window.info_dialog("That's not a file format I can understand.",
+                           "Sorry, use ics or csv.")
+        return
+
+    window.info_dialog(myr_task.name + " saved!",
+                       "Your task history was exported to " + filename)
+
+
+def export_to_csv(window, myr_task, spent, filename):
+
+    with open(filename, 'w', newline='') as csvfile:
+        csvwriter = csv.writer(csvfile)
+
+        # Header
+        csvwriter.writerow([
+            "Task Name", "Task Started", "Task Ended", "Length (Seconds)"])
+
+        for session in spent:
+            csvwriter.writerow([
+                myr_task.name,
+                datetime.datetime.utcfromtimestamp(
+                    session.started).replace(tzinfo=pytz.utc).isoformat(),
+                datetime.datetime.utcfromtimestamp(
+                    session.finished).replace(tzinfo=pytz.utc).isoformat(),
+                session.finished - session.started])
+
+
+
+def export_to_ical(window, myr_task, spent, filename):
 
     def display(cal):
         print(cal.to_ical().replace(b'\r\n', b'\n').strip().decode('utf8'))
@@ -237,9 +273,6 @@ def open_export(window, myr_task):
 
     with open(filename, 'wb') as f:
         f.write(cal.to_ical())
-
-    window.info_dialog(myr_task.name + " saved!",
-                       "Your task history was exported to " + filename)
 
 
 def make_add_task_window(app, update_ui, update=False):
