@@ -45,6 +45,41 @@ WINDOW_WIDTH = 640
 PADDING_WIDTH = 15
 
 task_windows = {}
+history_windows = {}
+
+
+def make_history_window(app, myr_task, update_ui):
+
+    if myr_task.id in history_windows.keys():
+        history_windows[myr_task.id].show()
+        return
+
+    box = toga.Box()
+    box.style.padding = PADDING_WIDTH
+
+    sessions = load_time_spent(myr_task)
+
+    for session in sessions:
+
+        from_entry = toga.TextInput()
+
+        sess_box = toga.Box()
+
+    l = toga.Label("Sorry, nothing here yet.")
+    box.add(l)
+
+    window = toga.Window(title="History of " + myr_task.name + " – Myriagon",
+                         position=(150, 150), size=(WINDOW_WIDTH, 200),
+                         resizeable=False)
+
+    def on_close():
+        history_windows.pop(myr_task.id)
+
+    window.on_close = on_close
+    window.content = box
+    window.show()
+
+    history_windows[myr_task.id] = window
 
 
 def make_task_window(app, myr_task, update_ui):
@@ -145,15 +180,46 @@ def make_task_window(app, myr_task, update_ui):
     timer_box.add(per_label)
 
     button_box = toga.Box()
+    button_box.style.flex_direction = "row"
 
     button = toga.Button('Start')
     button.style.margin_top = 5
+    button.style.margin_right = 3
+    button.style.width = (WINDOW_WIDTH - PADDING_WIDTH * 2) / 2
+
+    secondary_button = toga.Button('Edit History')
+    secondary_button.style.margin_top = 5
+    secondary_button.style.margin_left = 3
+    secondary_button.style.width = (WINDOW_WIDTH - PADDING_WIDTH * 2) / 2
 
     # lol scopign
     do_things = None
     loops = []
 
+    def cancel():
+        print('cancelling')
+        started[0] = 0
+        spent[0] = get_time_for_session(myr_task, time_spent)
+
+        while loops:
+            loops.pop().stop()
+
+        update_label()
+        update_per_label()
+        update_ui()
+
+    def make_secondary_cancel():
+        secondary_button.label = "Cancel"
+        secondary_button.on_press = lambda _: cancel()
+
+    def make_secondary_history():
+        secondary_button.label = "Edit History"
+        secondary_button.on_press = lambda _: make_history_window(
+            app, myr_task, update_ui)
+
     def stop_things(btn):
+        make_secondary_history()
+
         button.label = "Start"
         button.on_press = do_things
 
@@ -174,6 +240,7 @@ def make_task_window(app, myr_task, update_ui):
         update_ui()
 
     def dt(btn):
+        make_secondary_cancel()
         started[0] = floor(time.time())
         button.label = "Stop"
         button.on_press = stop_things
@@ -185,6 +252,8 @@ def make_task_window(app, myr_task, update_ui):
 
     button.on_press = do_things
     button_box.add(button)
+    button_box.add(secondary_button)
+    make_secondary_history()
 
     box.add(timer_box)
     box.add(button_box)

@@ -4,6 +4,8 @@ import datetime
 import appdirs
 import json
 
+from pytz import reference
+from uuid import uuid4
 from attr.validators import instance_of
 from typing import List
 from math import floor
@@ -17,6 +19,8 @@ from ._trash import get_days_in_month
 class TimeSpent(object):
     started = attr.ib(validator=instance_of(int))
     finished = attr.ib(validator=instance_of(int))
+    uuid = attr.ib(default=uuid4().hex,
+                   validator=instance_of(str))
 
 
 def seconds_into_clock(total):
@@ -32,6 +36,11 @@ def seconds_into_clock(total):
         floor((total % 3600) / 60),
         floor(total % 60))
 
+
+def seconds_into_iso8601(sec):
+
+    time = datetime.datetime.utcfromtimestamp(sec).replace(tzinfo=pytz.utc).astimezone(reference.LocalTimezone())
+    return time.isoformat()
 
 def load_time_spent(task):
 
