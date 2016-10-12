@@ -113,7 +113,7 @@ def make_task_window(app, myr_task, update_ui):
         elif myr_task.cutoff == "month":
 
             g = get_days_in_month(cd.year, cd.month)
-            days_remaining = g - cd.day + 1
+            days_remaining = g - cd.day - 1
 
         if needed - spent[0] > 0:
 
@@ -352,7 +352,7 @@ def make_add_task_window(app, update_ui, update=False):
     organised_label.style.margin_right = 7
     organised_label.style.width = (WINDOW_WIDTH - PADDING_WIDTH * 2) / 4
 
-    organised_entry = toga.Selection(items=("day", "week", "month", "year"))
+    organised_entry = toga.Selection(items=("week", "month", "year"))
 
     organised_box.add(organised_label)
     organised_box.add(organised_entry)

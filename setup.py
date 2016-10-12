@@ -37,7 +37,7 @@ setup(
     install_requires=[
         "incremental>=16.9.1",
         "icalendar",
-        "Twisted",
+        "Twisted==16.5.0rc1",
         "appdirs",
         "attrs",
         "cattrs",
@@ -63,7 +63,7 @@ setup(
             'app_requires': [
                 'toga-cocoa'
             ],
-            # 'icon': 'icons/myriagon',
+            'icon': 'src/myriagon/myriagon',
         },
     }
 )
