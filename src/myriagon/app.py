@@ -393,9 +393,11 @@ def make_add_task_window(app, update_ui, update=False):
 
     # Should be number clicky
     per_amount_entry = toga.NumberInput(max_value=99999)
+    per_amount_entry.value = 0
 
     per_amount_entry_type = toga.Selection(
         items=("seconds", "minutes", "hours"))
+    per_amount_entry_type.value = "minutes"
     per_amount_entry_type.style.margin_left = 4
 
     per_amount_for = toga.Label("a")
