@@ -404,6 +404,7 @@ def make_add_task_window(app, update_ui, update=False):
     per_amount_for.style.margin_top = 2
 
     per_duration_entry = toga.Selection(items=("day", "week", "month"))
+    per_duration_entry.value = "day"
 
     per_box.add(per_label)
     per_box.add(per_amount_entry)
@@ -417,6 +418,7 @@ def make_add_task_window(app, update_ui, update=False):
 
     organised_label = toga.Label("Organised by",
                                  alignment=toga.constants.RIGHT_ALIGNED)
+    organised_label.value = "week"
     organised_label.style.margin_top = 2
     organised_label.style.margin_right = 7
     organised_label.style.width = (WINDOW_WIDTH - PADDING_WIDTH * 2) / 4
