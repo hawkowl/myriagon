@@ -61,7 +61,8 @@ setup(
         },
         'macos': {
             'app_requires': [
-                'toga-cocoa'
+                'toga-cocoa',
+                'pyobjc-framework-CFNetwork',
             ],
             'icon': 'src/myriagon/myriagon',
         },
