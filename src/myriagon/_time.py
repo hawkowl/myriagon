@@ -124,7 +124,7 @@ def get_time_needed_for_session(task):
             return task.budget_seconds * days
 
         elif task.budget_per == "week":
-            return days // 7 * task.budget_seconds
+            return (days // 7) or 1 * task.budget_seconds
 
         elif task.budget_per == "month":
             return task.budget_seconds
