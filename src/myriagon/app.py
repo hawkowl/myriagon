@@ -148,7 +148,7 @@ def make_task_window(app, myr_task, update_ui):
         elif myr_task.cutoff == "month":
 
             g = get_days_in_month(cd.year, cd.month)
-            days_remaining = g - cd.day - 1
+            days_remaining = g - cd.day + 1
 
         if needed - spent[0] > 0:
 
